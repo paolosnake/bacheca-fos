@@ -699,24 +699,9 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);min-
 // ═══════════════════════════════════
 const BGS = ['tb1','tb2','tb3','tb4','tb5','tb6'];
 
-let annunci = [
-  {id:1,tipo:'Vendita',cat:'Veicoli',titolo:'VW Golf 5 1.9 TDI',desc:'Ottimo stato, revisione ok, gancio traino. 185.000 km, tagliandi fatti.',emoji:'🚗',sede:'Lucca',prezzo:'€3.500 trattabile',contatto:'WhatsApp Mario',autore:'M.Rossi',init:'MR',bg:'tb1'},
-  {id:2,tipo:'Vendita',cat:'Veicoli',titolo:'Yamaha MT-07 2020',desc:'28.000 km, mai caduta, sempre in garage. Accessori inclusi.',emoji:'🏍️',sede:'Lucca',prezzo:'€6.200',contatto:'Tel. Paolo',autore:'P.Bianchi',init:'PB',bg:'tb2'},
-  {id:3,tipo:'Affitto',cat:'Affitto',titolo:'Casa al mare – Versilia',desc:'3 camere Forte dei Marmi. Luglio disponibile. 100m mare, AC.',emoji:'🏖️',sede:'Lucca',prezzo:'€800/settimana',contatto:'Email Giorgio',autore:'G.Ferrari',init:'GF',bg:'tb3'},
-  {id:4,tipo:'Affitto',cat:'Affitto',titolo:'Bilocale Lucca centro',desc:'Mensile per trasferte. Arredato, Wi-Fi, spese incluse.',emoji:'🏠',sede:'Lucca',prezzo:'€600/mese',contatto:'WhatsApp Luca',autore:'L.Conti',init:'LC',bg:'tb4'},
-  {id:5,tipo:'Servizio',cat:'Servizio',titolo:'Ripetizioni Mat & Fisica',desc:'Medie e superiori. 10 anni esp. Disponibile sera e weekend.',emoji:'📐',sede:'Lucca',prezzo:'€20/ora',contatto:'Tel. Simone',autore:'S.Mancini',init:'SM',bg:'tb5'},
-  {id:6,tipo:'Vendita',cat:'Elettronica',titolo:'iPhone 14 Pro 256GB',desc:'Perfetto, 14 mesi. Custodia + MagSafe. Garanzia attiva.',emoji:'📱',sede:'Milano',prezzo:'€750',contatto:'WhatsApp Roberto',autore:'R.Luca',init:'RL',bg:'tb6'},
-  {id:7,tipo:'Regalo',cat:'Oggettistica',titolo:'Libri universitari Ingegneria',desc:'4 volumi Analisi e Fisica. Ritiro a mano Lucca.',emoji:'📚',sede:'Lucca',prezzo:'Gratis',contatto:'Tel. Fabio',autore:'F.Bruno',init:'FB',bg:'tb1'},
-];
+let annunci = [];
 
-let ristoranti = [
-  {id:1,nome:'Trattoria Buatino',citta:'Lucca',tipo:'Ristorante',cucina:'Toscana',desc:'Menù fisso €12, pasta fresca ogni giorno. Prenotare.',emoji:'🍝',voto:5,dist:'3 min a piedi',seg:'M.Rossi',init:'MR'},
-  {id:2,nome:'Pizzeria Il Moro',citta:'Lucca',tipo:'Pizzeria',cucina:'Napoletana',desc:'Pizza napoletana autentica, impasto 48h.',emoji:'🍕',voto:5,dist:'7 min a piedi',seg:'P.Bianchi',init:'PB'},
-  {id:3,nome:'Sushi Yuki',citta:'Milano',tipo:'Sushi',cucina:'Giapponese',desc:'Qualità alta, ordinazione via app. Veloce a pranzo.',emoji:'🍱',voto:4,dist:'8 min sede Garibaldi',seg:'L.Conti',init:'LC'},
-  {id:4,nome:'Caffè Verdi',citta:'Milano',tipo:'Bar',cucina:'Caffetteria',desc:'Panini artigianali, sempre veloce.',emoji:'☕',voto:4,dist:'2 min sede Cadorna',seg:'R.Luca',init:'RL'},
-  {id:5,nome:'Braceria del Borgo',citta:'Roma',tipo:'Ristorante',cucina:'Romana',desc:'Carne alla brace eccellente, porzioni generose.',emoji:'🥩',voto:5,dist:'12 min sede EUR',seg:'G.Ferrari',init:'GF'},
-  {id:6,nome:'Poke House',citta:'Roma',tipo:'Takeaway',cucina:'Hawaiiana',desc:'Poke bowl fresche. Veloce e conveniente.',emoji:'🥗',voto:4,dist:'5 min sede Prati',seg:'S.Mancini',init:'SM'},
-];
+let ristoranti = [];
 
 // ═══════════════════════════════════
 // ORE TRACKER
@@ -1511,13 +1496,11 @@ function showToast(msg) {
 // SISTEMA UTENTI
 // ═══════════════════════════════════
 
-const ADMIN_EMAIL    = 'admin@fosber.com';
-const ADMIN_PASSWORD = 'fosber2024!';
+const ADMIN_EMAIL    = 'paolosnake@yahoo.it';
+const ADMIN_PASSWORD = 'Giorgione1_';
 
 let utentiRegistrati = [
-  { nome: 'Mario Rossi',     email: 'admin@fosber.com',    pw: 'fosber2024!', init: 'MR', admin: true,  approvato: true  },
-  { nome: 'Paolo Bianchi',   email: 'p.bianchi@fosber.com',pw: 'paolo123',    init: 'PB', admin: false, approvato: true  },
-  { nome: 'Giorgio Ferrari', email: 'g.ferrari@fosber.com',pw: 'giorgio123',  init: 'GF', admin: false, approvato: true  },
+  { nome: 'Paolo Grazzini',  email: 'paolosnake@yahoo.it',   pw: 'Giorgione1_', init: 'PG', admin: true,  approvato: true  },
 ];
 
 let richiesteAccesso = []; // richieste in attesa di approvazione
