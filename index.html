@@ -508,27 +508,53 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);min-
 <!-- ═══════ RISTORANTI ═══════ -->
 <div class="page" id="page-ristoranti"><div class="wrap">
   <div class="phdr">
-    <div><div class="ptitle">Ristoranti & Locali</div><div class="psub">Consigli dei colleghi · Solo per noi</div></div>
+    <div><div class="ptitle">Ristoranti & Locali</div><div class="psub">Consigli dei colleghi · In tutto il mondo</div></div>
     <button class="btn-new" onclick="openModal('mr')">+ Suggerisci</button>
   </div>
-  <div class="mstats">
-    <div class="ms"><span class="msn" id="ms-r">6</span><span class="msl">locali</span></div>
-    <div class="ms"><span class="msn" id="ms-c">3</span><span class="msl">città</span></div>
-    <div class="ms"><span class="msn">4.5</span><span class="msl">voto medio ⭐</span></div>
+
+  <!-- RICERCA -->
+  <div class="sbar" style="margin-bottom:1.2rem"><span style="color:var(--mut)">🔍</span><input id="sr" placeholder="Cerca ristorante, cucina, città..." oninput="cercaRistoranti()"></div>
+  <div id="r-search-results" style="display:none;margin-bottom:1.5rem"></div>
+
+  <!-- NAVIGAZIONE GEOGRAFICA -->
+  <div id="r-nav">
+
+    <!-- STEP 1: CONTINENTI -->
+    <div id="r-step-continenti">
+      <div class="slbl">Seleziona un continente</div>
+      <div id="r-continenti-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:.65rem;margin-bottom:1.5rem"></div>
+    </div>
+
+    <!-- STEP 2: STATI -->
+    <div id="r-step-stati" style="display:none">
+      <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:1rem">
+        <button onclick="rGoBack('continenti')" style="background:var(--s1);border:1px solid var(--b);border-radius:8px;padding:.3rem .7rem;color:var(--mut);font-size:.8rem;cursor:pointer">← Indietro</button>
+        <span id="r-breadcrumb-continente" style="font-size:.82rem;color:var(--mut)"></span>
+      </div>
+      <div class="slbl">Seleziona uno stato</div>
+      <div id="r-stati-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:.65rem;margin-bottom:1.5rem"></div>
+    </div>
+
+    <!-- STEP 3: CITTÀ -->
+    <div id="r-step-citta" style="display:none">
+      <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:1rem">
+        <button onclick="rGoBack('stati')" style="background:var(--s1);border:1px solid var(--b);border-radius:8px;padding:.3rem .7rem;color:var(--mut);font-size:.8rem;cursor:pointer">← Indietro</button>
+        <span id="r-breadcrumb-stato" style="font-size:.82rem;color:var(--mut)"></span>
+      </div>
+      <div class="slbl">Seleziona una città</div>
+      <div id="r-citta-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:.65rem;margin-bottom:1.5rem"></div>
+    </div>
+
+    <!-- STEP 4: LISTA RISTORANTI -->
+    <div id="r-step-lista" style="display:none">
+      <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:1rem">
+        <button onclick="rGoBack('citta')" style="background:var(--s1);border:1px solid var(--b);border-radius:8px;padding:.3rem .7rem;color:var(--mut);font-size:.8rem;cursor:pointer">← Indietro</button>
+        <span id="r-breadcrumb-citta" style="font-size:.82rem;color:var(--mut)"></span>
+      </div>
+      <div class="rgrid" id="grid-r"></div>
+    </div>
+
   </div>
-  <div class="sbar"><span style="color:var(--mut)">🔍</span><input id="sr" placeholder="Cerca per nome, città, cucina..." oninput="renderR()"></div>
-  <div class="chips" id="chips-r">
-    <button class="chip on" onclick="setFR('Tutti',this)">Tutti</button>
-    <button class="chip" onclick="setFR('Lucca',this)">📍 Lucca</button>
-    <button class="chip" onclick="setFR('Milano',this)">📍 Milano</button>
-    <button class="chip" onclick="setFR('Roma',this)">📍 Roma</button>
-    <button class="chip" onclick="setFR('Ristorante',this)">🍽️ Ristorante</button>
-    <button class="chip" onclick="setFR('Pizzeria',this)">🍕 Pizza</button>
-    <button class="chip" onclick="setFR('Bar',this)">☕ Bar</button>
-    <button class="chip" onclick="setFR('Takeaway',this)">📦 Takeaway</button>
-  </div>
-  <div class="slbl" id="sl-r">Tutti i locali</div>
-  <div class="rgrid" id="grid-r"></div>
 </div></div>
 
 <!-- ═══════ ORE LAVORO ═══════ -->
@@ -679,12 +705,22 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);min-
     <h2>Suggerisci un locale</h2>
     <div class="fg"><label>Nome locale</label><input id="rn" placeholder="Es. Trattoria da Mario..."></div>
     <div class="fgr">
-      <div class="fg"><label>Città</label><select id="rci"><option>Lucca</option><option>Milano</option><option>Roma</option><option>Torino</option><option>Napoli</option><option>Altra</option></select></div>
-      <div class="fg"><label>Tipo</label><select id="rti"><option>Ristorante</option><option>Pizzeria</option><option>Bar</option><option>Takeaway</option><option>Osteria</option><option>Sushi</option></select></div>
+      <div class="fg"><label>Continente</label>
+        <select id="r-cont" onchange="aggiornaCitteSuggerite()">
+          <option value="">— Seleziona —</option>
+          <option>Europa</option><option>Asia</option><option>Americhe</option>
+          <option>Africa</option><option>Oceania</option><option>Medio Oriente</option>
+        </select>
+      </div>
+      <div class="fg"><label>Stato</label><input id="r-stato" placeholder="Es. Italia, Germania..." oninput="aggiornaCitteSuggerite()"></div>
     </div>
-    <div class="fg"><label>Cucina</label><input id="rcu" placeholder="Es. Italiana, Giapponese..."></div>
-    <div class="fg"><label>Perché lo consiglia?</label><textarea id="rde" placeholder="Menù fisso ottimo, veloce, buon prezzo..."></textarea></div>
-    <div class="fg"><label>Distanza dalla sede</label><input id="rdi" placeholder="Es. 5 min a piedi..."></div>
+    <div class="fg"><label>Città</label>
+      <input id="rci" placeholder="Es. Milano, Tokyo..." list="r-citta-list">
+      <datalist id="r-citta-list"></datalist>
+    </div>
+    <div class="fg"><label>Tipo cucina</label><input id="rcu" placeholder="Es. Italiana, Giapponese, Fusion..."></div>
+    <div class="fg"><label>Perché lo consiglia?</label><textarea id="rde" placeholder="Ottimo rapporto qualità/prezzo, porzioni abbondanti..."></textarea></div>
+    <div class="fg"><label>Link Google Maps (opzionale)</label><input id="rmaps" placeholder="https://maps.google.com/..."></div>
     <div class="fg"><label>Voto</label>
       <div class="ssbx" id="ssbx">
         <button onclick="setStar(1)" data-s="1">⭐</button>
@@ -736,7 +772,7 @@ const BGS = ['tb1','tb2','tb3','tb4','tb5','tb6'];
 
 let annunci = [];
 
-let ristoranti = [];
+
 
 // ═══════════════════════════════════
 // ORE TRACKER
@@ -1252,6 +1288,7 @@ function goPage(id, btn) {
   btn.classList.add('on');
   if (id === 'ore') oreRenderGrid();
   if (id === 'admin') renderAdmin();
+  if (id === 'ristoranti') { rShowStep('continenti'); renderRContinenti(); }
 }
 
 // ═══════════════════════════════════
@@ -1360,44 +1397,159 @@ function setFB(v, btn) {
 }
 
 // ═══════════════════════════════════
+// ═══════════════════════════════════
 // RISTORANTI
 // ═══════════════════════════════════
-let fR = 'Tutti';
-function renderR() {
-  const q = document.getElementById('sr').value.toLowerCase();
-  let d = ristoranti.filter(r => {
-    const mf = fR==='Tutti' || r.citta===fR || r.tipo===fR;
-    return mf && (!q || r.nome.toLowerCase().includes(q) || r.citta.toLowerCase().includes(q) || r.cucina.toLowerCase().includes(q));
-  });
-  document.getElementById('ms-r').textContent = ristoranti.length;
-  document.getElementById('nb-r').textContent = ristoranti.length;
-  document.getElementById('ms-c').textContent = [...new Set(ristoranti.map(r => r.citta))].length;
-  document.getElementById('qs-r').textContent = ristoranti.length;
-  document.getElementById('sl-r').textContent = fR==='Tutti' ? `Tutti (${d.length})` : `${fR} (${d.length})`;
-  const g = document.getElementById('grid-r');
-  if (!d.length) { g.innerHTML = '<div class="empty"><div class="emico">🍽️</div><h3>Nessun locale trovato</h3></div>'; return; }
-  const grouped = {};
-  d.forEach(r => { if (!grouped[r.citta]) grouped[r.citta] = []; grouped[r.citta].push(r); });
-  let html = '';
-  Object.entries(grouped).forEach(([city, items]) => {
-    html += `<div class="cdiv">📍 ${city}</div>`;
-    html += items.map(r => `<div class="rcard">
-      <div class="rem">${r.emoji}</div>
-      <div class="ri">
-        <div class="rtop"><div class="rname">${r.nome}</div><div class="rstars">${'⭐'.repeat(r.voto)}</div></div>
-        <div class="rtags"><span class="rtag rtag-c">${r.citta}</span><span class="rtag">${r.tipo}</span><span class="rtag">${r.cucina}</span></div>
-        <div class="rdesc">${r.desc}</div>
-        <div class="rdist">📍 ${r.dist} · da ${r.seg}</div>
-      </div>
-    </div>`).join('');
-  });
-  g.innerHTML = html;
+const CONTINENTE_EMOJI = { Europa:'🇪🇺', Asia:'🌏', Americhe:'🌎', Africa:'🌍', Oceania:'🌊', 'Medio Oriente':'🕌' };
+let rFiltroContintente = null, rFiltroStato = null, rFiltroCitta = null;
+let tuttiRistoranti = [];
+
+async function loadRistoranti() {
+  const { data } = await supa.from('ristoranti').select('*').order('created_at', { ascending: false });
+  tuttiRistoranti = data || [];
+  renderHome();
+  renderRContinenti();
 }
-function setFR(v, btn) {
-  fR = v;
-  document.querySelectorAll('#chips-r .chip').forEach(c => c.classList.remove('on'));
-  btn.classList.add('on');
-  renderR();
+
+function renderRContinenti() {
+  const el = document.getElementById('r-continenti-grid');
+  const continenti = [...new Set(tuttiRistoranti.map(r => r.continente))].sort();
+  if (!continenti.length) {
+    el.innerHTML = '<div style="color:var(--mut);font-size:.85rem;grid-column:1/-1">Nessun ristorante ancora. Sii il primo a suggerirne uno! 🍽️</div>';
+    return;
+  }
+  el.innerHTML = continenti.map(c => {
+    const n = tuttiRistoranti.filter(r => r.continente === c).length;
+    return `<div onclick="rSelContinente('${c}')" style="background:var(--s1);border:1px solid var(--b);border-radius:12px;padding:1rem;cursor:pointer;transition:all .2s;text-align:center" onmouseover="this.style.borderColor='var(--acc)'" onmouseout="this.style.borderColor='var(--b)'">
+      <div style="font-size:1.8rem;margin-bottom:.3rem">${CONTINENTE_EMOJI[c]||'🌐'}</div>
+      <div style="font-weight:600;font-size:.9rem">${c}</div>
+      <div style="font-size:.72rem;color:var(--mut);margin-top:.2rem">${n} locali</div>
+    </div>`;
+  }).join('');
+}
+
+function rSelContinente(c) {
+  rFiltroContintente = c;
+  document.getElementById('r-breadcrumb-continente').textContent = CONTINENTE_EMOJI[c]||'' + ' ' + c;
+  const stati = [...new Set(tuttiRistoranti.filter(r => r.continente===c).map(r => r.stato))].sort();
+  const el = document.getElementById('r-stati-grid');
+  el.innerHTML = stati.map(s => {
+    const n = tuttiRistoranti.filter(r => r.continente===c && r.stato===s).length;
+    return `<div onclick="rSelStato('${s}')" style="background:var(--s1);border:1px solid var(--b);border-radius:12px;padding:.85rem 1rem;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:space-between" onmouseover="this.style.borderColor='var(--acc)'" onmouseout="this.style.borderColor='var(--b)'">
+      <span style="font-weight:600;font-size:.88rem">${s}</span>
+      <span style="font-size:.72rem;color:var(--mut)">${n}</span>
+    </div>`;
+  }).join('');
+  rShowStep('stati');
+}
+
+function rSelStato(s) {
+  rFiltroStato = s;
+  document.getElementById('r-breadcrumb-stato').textContent = `${rFiltroContintente} › ${s}`;
+  const citta = [...new Set(tuttiRistoranti.filter(r => r.continente===rFiltroContintente && r.stato===s).map(r => r.citta))].sort();
+  const el = document.getElementById('r-citta-grid');
+  el.innerHTML = citta.map(ct => {
+    const n = tuttiRistoranti.filter(r => r.stato===s && r.citta===ct).length;
+    return `<div onclick="rSelCitta('${ct}')" style="background:var(--s1);border:1px solid var(--b);border-radius:12px;padding:.85rem 1rem;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:space-between" onmouseover="this.style.borderColor='var(--acc)'" onmouseout="this.style.borderColor='var(--b)'">
+      <span style="font-weight:600;font-size:.88rem">📍 ${ct}</span>
+      <span style="font-size:.72rem;color:var(--mut)">${n} locali</span>
+    </div>`;
+  }).join('');
+  rShowStep('citta');
+}
+
+function rSelCitta(ct) {
+  rFiltroCitta = ct;
+  document.getElementById('r-breadcrumb-citta').textContent = `${rFiltroStato} › ${ct}`;
+  const lista = tuttiRistoranti.filter(r => r.stato===rFiltroStato && r.citta===ct).sort((a,b) => b.voto-a.voto);
+  const g = document.getElementById('grid-r');
+  g.innerHTML = lista.length ? lista.map(rCardHtml).join('') : '<div class="empty"><div class="emico">🍽️</div><h3>Nessun locale in questa città</h3></div>';
+  rShowStep('lista');
+}
+
+function rShowStep(step) {
+  ['continenti','stati','citta','lista'].forEach(s => {
+    document.getElementById('r-step-'+s).style.display = s===step ? '' : 'none';
+  });
+}
+
+function rGoBack(step) {
+  rShowStep(step);
+}
+
+function rCardHtml(r) {
+  return `<div class="rcard">
+    <div class="rem">🍽️</div>
+    <div class="ri">
+      <div class="rtop"><div class="rname">${r.nome}</div><div class="rstars">${'⭐'.repeat(r.voto)}</div></div>
+      <div class="rtags">
+        ${r.cucina ? `<span class="rtag rtag-c">${r.cucina}</span>` : ''}
+        <span class="rtag">${r.citta}</span>
+      </div>
+      <div class="rdesc">${r.descrizione||''}</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:.4rem">
+        <div class="rdist">da ${r.autore||'Collega'}</div>
+        ${r.maps_link ? `<a href="${r.maps_link}" target="_blank" style="font-size:.72rem;color:var(--acc);text-decoration:none">📍 Maps</a>` : ''}
+      </div>
+    </div>
+  </div>`;
+}
+
+async function cercaRistoranti() {
+  const q = document.getElementById('sr').value.trim().toLowerCase();
+  const res = document.getElementById('r-search-results');
+  if (!q) { res.style.display='none'; return; }
+  const found = tuttiRistoranti.filter(r =>
+    r.nome.toLowerCase().includes(q) ||
+    (r.cucina||'').toLowerCase().includes(q) ||
+    (r.descrizione||'').toLowerCase().includes(q) ||
+    r.citta.toLowerCase().includes(q)
+  );
+  res.style.display = '';
+  res.innerHTML = found.length
+    ? `<div class="slbl">Risultati per "${q}" (${found.length})</div>` + found.map(rCardHtml).join('')
+    : `<div style="color:var(--mut);font-size:.85rem">Nessun risultato per "${q}"</div>`;
+}
+
+async function aggiornaCitteSuggerite() {
+  const stato = document.getElementById('r-stato').value.trim();
+  if (!stato) return;
+  const citta = [...new Set(tuttiRistoranti.filter(r => r.stato.toLowerCase()===stato.toLowerCase()).map(r => r.citta))];
+  const dl = document.getElementById('r-citta-list');
+  dl.innerHTML = citta.map(c => `<option value="${c}">`).join('');
+}
+
+async function addR() {
+  const n    = document.getElementById('rn').value.trim();
+  const cont = document.getElementById('r-cont').value;
+  const stato= document.getElementById('r-stato').value.trim();
+  const citta= document.getElementById('rci').value.trim();
+  if (!n || !cont || !stato || !citta) { showToast('Compila nome, continente, stato e città'); return; }
+  await supa.from('ristoranti').insert({
+    nome: n,
+    continente: cont,
+    stato,
+    citta,
+    cucina: document.getElementById('rcu').value || '',
+    descrizione: document.getElementById('rde').value || '',
+    maps_link: document.getElementById('rmaps').value || '',
+    voto: starR,
+    autore: currentUser ? currentUser.nome : 'Anonimo',
+    autore_email: currentUser ? currentUser.email : '',
+    init: currentUser ? currentUser.init : '??'
+  });
+  closeModal('mr');
+  document.getElementById('rn').value='';
+  document.getElementById('r-stato').value='';
+  document.getElementById('rci').value='';
+  document.getElementById('rcu').value='';
+  document.getElementById('rde').value='';
+  document.getElementById('rmaps').value='';
+  document.getElementById('r-cont').value='';
+  starR=5;
+  document.querySelectorAll('#ssbx button').forEach(b => b.classList.toggle('on', parseInt(b.dataset.s)===5));
+  await loadRistoranti();
+  showToast('Locale aggiunto! 🎉');
 }
 
 // ═══════════════════════════════════
@@ -1406,12 +1558,14 @@ function setFR(v, btn) {
 function renderHome() {
   const h = new Date().getHours();
   document.getElementById('hgreet').textContent = h < 12 ? '☀️ Buongiorno' : h < 18 ? '🌤️ Buon pomeriggio' : '🌙 Buonasera';
-  document.getElementById('home-rest').innerHTML = [...ristoranti].sort((a,b) => b.voto-a.voto).slice(0,3).map(r =>
+  const top3 = [...tuttiRistoranti].sort((a,b) => b.voto-a.voto).slice(0,3);
+  document.getElementById('home-rest').innerHTML = top3.length ? top3.map(r =>
     `<div class="rmi" onclick="goPage('ristoranti',document.querySelectorAll('.ntab')[2])">
-      <div class="rmiem">${r.emoji}</div>
-      <div><div class="rminame">${r.nome}</div><div class="rmimeta">${r.tipo} · ${r.citta}</div></div>
+      <div class="rmiem">🍽️</div>
+      <div><div class="rminame">${r.nome}</div><div class="rmimeta">${r.cucina||'Locale'} · ${r.citta}</div></div>
       <div class="rmistars">${'⭐'.repeat(r.voto)}</div>
-    </div>`).join('');
+    </div>`).join('')
+    : '<div style="color:var(--mut);font-size:.82rem">Nessun locale ancora</div>';
 }
 
 // ═══════════════════════════════════
@@ -1432,7 +1586,7 @@ function setStar(n) {
   document.querySelectorAll('#ssbx button').forEach(b => b.classList.toggle('on', parseInt(b.dataset.s) === n));
 }
 
-const emojiM = { Ristorante:'🍽️', Pizzeria:'🍕', Bar:'☕', Takeaway:'📦', Osteria:'🍷', Sushi:'🍱' };
+
 
 async function addA() {
   const t = document.getElementById('fti').value.trim();
@@ -1497,26 +1651,6 @@ async function editAnn(id) {
   document.getElementById('modal-ann-title').textContent = 'Modifica annuncio';
   document.getElementById('btn-sub-ann').textContent = 'Salva modifiche →';
   openModal('mb');
-}
-
-function addR() {
-  const n = document.getElementById('rn').value.trim();
-  if (!n) { showToast('Inserisci il nome'); return; }
-  const tipo = document.getElementById('rti').value;
-  ristoranti.unshift({
-    id: Date.now(), nome: n,
-    citta: document.getElementById('rci').value, tipo,
-    cucina: document.getElementById('rcu').value || 'Varia',
-    desc: document.getElementById('rde').value || 'Consigliato da un collega.',
-    emoji: emojiM[tipo] || '🍽️', voto: starR,
-    dist: document.getElementById('rdi').value || 'Da verificare',
-    seg: 'M.Rossi', init: 'MR'
-  });
-  closeModal('mr');
-  document.getElementById('rn').value = '';
-  document.getElementById('rde').value = '';
-  renderR(); renderHome();
-  showToast('Locale aggiunto! 🎉');
 }
 
 // ═══════════════════════════════════
@@ -1733,6 +1867,7 @@ function loginSuccess(u) {
   oreRenderStorico();
   oreLoadNote();
   loadAvvisi();
+  loadRistoranti();
   renderB(); renderHome();
 }
 
