@@ -603,6 +603,12 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);min-
     <div><div class="ptitle">⚙️ Pannello Admin</div><div class="psub">Gestisci utenti e richieste di accesso</div></div>
   </div>
 
+  <!-- ANNUNCI IN ATTESA -->
+  <div class="sechdr"><div class="sectitle">🏷️ Annunci in attesa</div></div>
+  <div id="admin-annunci" style="margin-bottom:2rem">
+    <div class="empty"><div class="emico">✅</div><h3>Nessun annuncio in attesa</h3></div>
+  </div>
+
   <!-- AVVISI -->
   <div class="sechdr"><div class="sectitle">📢 Avvisi in bacheca</div></div>
   <div style="background:var(--s1);border:1px solid var(--b);border-radius:12px;padding:1.2rem;margin-bottom:1.5rem">
@@ -1314,7 +1320,7 @@ function cardHtml(a) {
 }
 async function renderB() {
   const q = document.getElementById('sb').value.toLowerCase();
-  let { data: annunci } = await supa.from('annunci').select('*').order('created_at', { ascending: false });
+  let { data: annunci } = await supa.from('annunci').select('*').eq('approvato', true).order('created_at', { ascending: false });
   annunci = annunci || [];
   let d = annunci.filter(a => {
     const mf = fB==='Tutti' || a.cat===fB || (fB==='Affitto'&&a.tipo==='Affitto') || (fB==='Servizio'&&a.tipo==='Servizio') || (fB==='Regalo'&&a.tipo==='Regalo') || (fB==='Cercasi'&&a.tipo==='Cercasi');
@@ -1451,8 +1457,8 @@ async function addA() {
     await supa.from('annunci').update(payload).eq('id', editId);
     showToast('Annuncio aggiornato! ✅');
   } else {
-    await supa.from('annunci').insert(payload);
-    showToast('Annuncio pubblicato! 🎉');
+    await supa.from('annunci').insert({...payload, approvato: false});
+    showToast('Annuncio inviato! Attendi approvazione 🕐');
   }
   closeModal('mb');
   resetFormA();
@@ -1571,6 +1577,47 @@ async function addAvviso() {
   loadAvvisi();
   renderAdminAvvisi();
   showToast('Avviso pubblicato! 📢');
+}
+
+async function renderAdminAnnunci() {
+  const el = document.getElementById('admin-annunci');
+  el.innerHTML = '<div style="color:var(--mut);font-size:.82rem">Caricamento...</div>';
+  const { data } = await supa.from('annunci').select('*').eq('approvato', false).order('created_at', { ascending: false });
+  if (!data || !data.length) {
+    el.innerHTML = '<div class="empty"><div class="emico">✅</div><h3>Nessun annuncio in attesa</h3></div>';
+    return;
+  }
+  el.innerHTML = data.map(a => `
+    <div style="background:var(--s1);border:1px solid var(--b);border-radius:12px;padding:1rem 1.2rem;margin-bottom:.7rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.8rem">
+      <div style="display:flex;align-items:center;gap:.8rem">
+        <div style="font-size:1.8rem">${a.emoji||'📦'}</div>
+        <div>
+          <div style="font-weight:600;font-size:.95rem">${a.titolo}</div>
+          <div style="font-size:.75rem;color:var(--mut)">${a.autore} · ${a.tipo} · ${a.cat}</div>
+          ${a.prezzo ? `<div style="font-size:.78rem;color:var(--acc)">${a.prezzo}</div>` : ''}
+        </div>
+      </div>
+      <div style="display:flex;gap:.5rem">
+        <button class="btn-new" style="font-size:.82rem;padding:.45rem .9rem;background:#47e8a0;color:#000" onclick="approvaAnnuncio('${a.id}')">✅ Approva</button>
+        <button class="btn-new" style="font-size:.82rem;padding:.45rem .9rem;background:rgba(212,43,43,.15);color:var(--acc);border:1px solid rgba(212,43,43,.3)" onclick="rifiutaAnnuncio('${a.id}','${a.titolo}')">❌ Rifiuta</button>
+      </div>
+    </div>`).join('');
+}
+
+async function approvaAnnuncio(id) {
+  await supa.from('annunci').update({ approvato: true }).eq('id', id);
+  aggiornaAdminBadge();
+  renderAdminAnnunci();
+  renderB();
+  showToast('Annuncio approvato! ✅');
+}
+
+async function rifiutaAnnuncio(id, titolo) {
+  if (!confirm(`Rifiutare "${titolo}"?`)) return;
+  await supa.from('annunci').delete().eq('id', id);
+  aggiornaAdminBadge();
+  renderAdminAnnunci();
+  showToast('Annuncio rifiutato');
 }
 
 async function renderAdminAvvisi() {
@@ -1696,8 +1743,9 @@ function showErr(el, msg) {
 }
 
 async function aggiornaAdminBadge() {
-  const { data } = await supa.from('richieste').select('id');
-  const n = data ? data.length : 0;
+  const { data: r } = await supa.from('richieste').select('id');
+  const { data: a } = await supa.from('annunci').select('id').eq('approvato', false);
+  const n = (r ? r.length : 0) + (a ? a.length : 0);
   const badge = document.getElementById('nb-admin');
   badge.textContent = n;
   badge.style.display = n > 0 ? '' : 'none';
@@ -1708,6 +1756,7 @@ async function aggiornaAdminBadge() {
 // ═══════════════════════════════════
 async function renderAdmin() {
   renderAdminAvvisi();
+  renderAdminAnnunci();
   const rEl = document.getElementById('admin-richieste');
   rEl.innerHTML = '<div style="color:var(--mut);font-size:.82rem;padding:.4rem 0">Caricamento...</div>';
   const { data: richieste } = await supa.from('richieste').select('*').order('created_at');
