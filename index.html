@@ -399,12 +399,15 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);min-
       <div class="lf"><label>Password</label><input id="lin-pw" type="password" placeholder="••••••••"></div>
       <div id="lin-err" style="font-size:.76rem;color:var(--acc);margin-bottom:.7rem;display:none"></div>
       <button class="btn-login" onclick="doLogin()">Accedi →</button>
+      <div style="text-align:center;margin-top:.8rem">
+        <span style="font-size:.75rem;color:var(--mut);cursor:pointer;text-decoration:underline" onclick="switchLoginTab('pw')">Password dimenticata?</span>
+      </div>
     </div>
 
     <!-- REGISTRATI -->
     <div id="lpanel-reg" style="display:none">
       <div class="lf"><label>Nome e Cognome</label><input id="reg-nome" placeholder="Es. Mario Rossi"></div>
-      <div class="lf"><label>Email aziendale</label><input id="reg-email" type="email" placeholder="es. mario@fosber.com"></div>
+      <div class="lf"><label>Email</label><input id="reg-email" type="email" placeholder="es. mario@email.com"></div>
       <div class="lf"><label>Password</label><input id="reg-pw" type="password" placeholder="Min. 6 caratteri"></div>
       <div class="lf"><label>Chi sei? (facoltativo)</label><input id="reg-nota" placeholder="Es. Ufficio tecnico Lucca, da 3 anni..."></div>
       <div id="reg-err" style="font-size:.76rem;color:var(--acc);margin-bottom:.7rem;display:none"></div>
@@ -414,7 +417,19 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);min-
       <button class="btn-login" id="btn-reg" onclick="doRegister()">Invia richiesta →</button>
     </div>
 
-    <div class="lnote">Accesso su invito · Problemi? Contatta l'amministratore</div>
+    <!-- RECUPERO PASSWORD -->
+    <div id="lpanel-pw" style="display:none">
+      <div style="font-size:.88rem;color:var(--mut);margin-bottom:1.2rem">Inserisci la tua email — l'amministratore ti contatterà per reimpostare la password.</div>
+      <div class="lf"><label>Email</label><input id="pw-email" type="email" placeholder="es. mario@email.com"></div>
+      <div id="pw-err" style="font-size:.76rem;color:var(--acc);margin-bottom:.7rem;display:none"></div>
+      <div id="pw-ok" style="font-size:.82rem;background:rgba(71,232,160,.1);color:var(--grn);border:1px solid rgba(71,232,160,.25);border-radius:8px;padding:.7rem;margin-bottom:.8rem;display:none">
+        ✅ Richiesta inviata! L'amministratore ti contatterà a breve.
+      </div>
+      <button class="btn-login" id="btn-pw" onclick="doRecuperoPw()">Invia richiesta →</button>
+      <div style="text-align:center;margin-top:.8rem">
+        <span style="font-size:.75rem;color:var(--mut);cursor:pointer;text-decoration:underline" onclick="switchLoginTab('in')">← Torna al login</span>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -445,7 +460,7 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);min-
 <div class="page on" id="page-home"><div class="wrap">
   <div class="hhero">
     <div class="hgreet" id="hgreet">Buongiorno</div>
-    <div class="htitle">Ciao, <em>Mario.</em><br>Cosa c'è oggi?</div>
+    <div class="htitle">Ciao, <em id="home-nome">!</em><br>Cosa c'è oggi?</div>
     <div class="hsub">La tua piattaforma interna · Tutto in un posto</div>
   </div>
   <div class="qs">
@@ -1140,12 +1155,15 @@ function updateHomeOre() {
 // ═══════════════════════════════════
 // DETTAGLIO ANNUNCIO
 // ═══════════════════════════════════
-function openAnn(id) {
-  const a = annunci.find(x => x.id === id);
+async function openAnn(id) {
+  const { data: a } = await supa.from('annunci').select('*').eq('id', id).single();
   if (!a) return;
+  a.desc = a.descrizione || '';
+  a.foto = a.foto || [];
   const bdgCls_ = bdgCls(a.tipo);
+  const isMio = currentUser && a.autore_email === currentUser.email;
+  const isAdmin = currentUser && currentUser.admin;
 
-  // Galleria
   let galleriaHtml;
   if (a.foto && a.foto.length) {
     const imgs = a.foto.map((src, i) =>
@@ -1153,7 +1171,7 @@ function openAnn(id) {
     const dots = a.foto.length > 1
       ? `<div class="gdots">${a.foto.map((_,i)=>`<div class="gdot${i===0?' on':''}"></div>`).join('')}</div>` : '';
     const btns = a.foto.length > 1
-      ? `<button class="gbtn gbtn-l" onclick="galNav(${id},-1)">‹</button><button class="gbtn gbtn-r" onclick="galNav(${id},1)">›</button>` : '';
+      ? `<button class="gbtn gbtn-l" onclick="galNavDirect(event,-1)">‹</button><button class="gbtn gbtn-r" onclick="galNavDirect(event,1)">›</button>` : '';
     galleriaHtml = `<div class="gallery" id="gal-${id}">${imgs}${btns}${dots}</div>`;
   } else {
     galleriaHtml = `<div class="gallery ${a.bg}"><div class="gallery-emoji">${a.emoji}</div></div>`;
@@ -1176,26 +1194,24 @@ function openAnn(id) {
       <div style="display:flex;gap:.5rem;flex-wrap:wrap">
         ${a.contatto ? `<a href="mailto:${a.contatto}" style="text-decoration:none"><button class="btn-new" style="font-size:.85rem;padding:.55rem 1.1rem">✉️ Email</button></a>` : ''}
         ${a.whatsapp ? `<a href="https://wa.me/${a.whatsapp.replace(/\D/g,'')}" target="_blank" style="text-decoration:none"><button class="btn-new" style="font-size:.85rem;padding:.55rem 1.1rem;background:#25d366;color:#000">💬 WhatsApp</button></a>` : ''}
-        ${currentUser && a.autore===currentUser.nome ? `<button class="btn-new" style="font-size:.85rem;padding:.55rem 1.1rem;background:var(--s2);color:var(--text);border:1px solid var(--b)" onclick="editAnn(${a.id})">✏️ Modifica</button>` : ''}
-        ${currentUser && (a.autore===currentUser.nome || currentUser.admin) ? `<button class="btn-new" style="font-size:.85rem;padding:.55rem 1.1rem;background:rgba(212,43,43,.15);color:var(--acc);border:1px solid rgba(212,43,43,.3)" onclick="deleteAnn(${a.id})">🗑️ Elimina</button>` : ''}
+        ${isMio ? `<button class="btn-new" style="font-size:.85rem;padding:.55rem 1.1rem;background:var(--s2);color:var(--text);border:1px solid var(--b)" onclick="editAnn('${a.id}')">✏️ Modifica</button>` : ''}
+        ${isMio || isAdmin ? `<button class="btn-new" style="font-size:.85rem;padding:.55rem 1.1rem;background:rgba(212,43,43,.15);color:var(--acc);border:1px solid rgba(212,43,43,.3)" onclick="deleteAnn('${a.id}')">🗑️ Elimina</button>` : ''}
       </div>
     </div>
   `;
   openModal('ann');
 }
 
-function deleteAnn(id) {
+async function deleteAnn(id) {
   if (!confirm('Sei sicuro di voler eliminare questo annuncio?')) return;
-  annunci = annunci.filter(a => a.id !== id);
+  await supa.from('annunci').delete().eq('id', id);
   closeModal('ann');
-  renderB(); renderHome();
+  renderB();
   showToast('Annuncio eliminato 🗑️');
 }
 
-function galNav(annId, dir) {
-  const a = annunci.find(x => x.id === annId);
-  if (!a || !a.foto) return;
-  const gal = document.getElementById('gal-' + annId);
+function galNavDirect(e, dir) {
+  const gal = e.target.closest('.gallery');
   if (!gal) return;
   const imgs = gal.querySelectorAll('img');
   const dots = gal.querySelectorAll('.gdot');
@@ -1283,18 +1299,25 @@ function cardHtml(a) {
     </div>
   </div>`;
 }
-function renderB() {
+async function renderB() {
   const q = document.getElementById('sb').value.toLowerCase();
+  let { data: annunci } = await supa.from('annunci').select('*').order('created_at', { ascending: false });
+  annunci = annunci || [];
   let d = annunci.filter(a => {
     const mf = fB==='Tutti' || a.cat===fB || (fB==='Affitto'&&a.tipo==='Affitto') || (fB==='Servizio'&&a.tipo==='Servizio') || (fB==='Regalo'&&a.tipo==='Regalo') || (fB==='Cercasi'&&a.tipo==='Cercasi');
-    return mf && (!q || a.titolo.toLowerCase().includes(q) || a.desc.toLowerCase().includes(q) || a.cat.toLowerCase().includes(q));
+    return mf && (!q || a.titolo.toLowerCase().includes(q) || (a.descrizione||'').toLowerCase().includes(q) || a.cat.toLowerCase().includes(q));
   });
+  // normalizza campo desc per compatibilità card
+  d = d.map(a => ({...a, desc: a.descrizione || '', foto: a.foto || []}));
+  annunci = annunci.map(a => ({...a, desc: a.descrizione || '', foto: a.foto || []}));
   document.getElementById('ms-b').textContent = annunci.length;
   document.getElementById('nb-b').textContent = annunci.length;
   document.getElementById('qs-b').textContent = annunci.length;
   document.getElementById('sl-b').textContent = fB==='Tutti' ? `Tutti (${d.length})` : `${fB} (${d.length})`;
   const g = document.getElementById('grid-b');
   g.innerHTML = d.length ? d.map(cardHtml).join('') : '<div class="empty"><div class="emico">🔍</div><h3>Nessun risultato</h3></div>';
+  // aggiorna home
+  document.getElementById('home-ann').innerHTML = annunci.slice(0,3).map(cardHtml).join('');
 }
 function setFB(v, btn) {
   fB = v;
@@ -1348,15 +1371,14 @@ function setFR(v, btn) {
 // HOME
 // ═══════════════════════════════════
 function renderHome() {
-  document.getElementById('home-ann').innerHTML = annunci.slice(0, 3).map(cardHtml).join('');
+  const h = new Date().getHours();
+  document.getElementById('hgreet').textContent = h < 12 ? '☀️ Buongiorno' : h < 18 ? '🌤️ Buon pomeriggio' : '🌙 Buonasera';
   document.getElementById('home-rest').innerHTML = [...ristoranti].sort((a,b) => b.voto-a.voto).slice(0,3).map(r =>
     `<div class="rmi" onclick="goPage('ristoranti',document.querySelectorAll('.ntab')[2])">
       <div class="rmiem">${r.emoji}</div>
       <div><div class="rminame">${r.nome}</div><div class="rmimeta">${r.tipo} · ${r.citta}</div></div>
       <div class="rmistars">${'⭐'.repeat(r.voto)}</div>
     </div>`).join('');
-  const h = new Date().getHours();
-  document.getElementById('hgreet').textContent = h < 12 ? '☀️ Buongiorno' : h < 18 ? '🌤️ Buon pomeriggio' : '🌙 Buonasera';
 }
 
 // ═══════════════════════════════════
@@ -1379,50 +1401,35 @@ function setStar(n) {
 
 const emojiM = { Ristorante:'🍽️', Pizzeria:'🍕', Bar:'☕', Takeaway:'📦', Osteria:'🍷', Sushi:'🍱' };
 
-function addA() {
+async function addA() {
   const t = document.getElementById('fti').value.trim();
   if (!t) { showToast('Inserisci un titolo'); return; }
   const editId = document.getElementById('fedit-id').value;
+  const payload = {
+    tipo: document.getElementById('ft').value,
+    cat:  document.getElementById('fc').value,
+    titolo: t,
+    descrizione: document.getElementById('fde').value || '',
+    emoji: document.getElementById('fem').value || '📦',
+    foto: [...fotoTemp],
+    prezzo: document.getElementById('fpr').value || '',
+    contatto: document.getElementById('fct').value || '',
+    whatsapp: document.getElementById('fwa').value || '',
+    autore: currentUser ? currentUser.nome : 'Anonimo',
+    autore_email: currentUser ? currentUser.email : '',
+    init: currentUser ? currentUser.init : '??',
+    bg: BGS[Math.floor(Math.random() * BGS.length)]
+  };
   if (editId) {
-    // MODIFICA
-    const idx = annunci.findIndex(a => a.id == editId);
-    if (idx > -1) {
-      annunci[idx].tipo = document.getElementById('ft').value;
-      annunci[idx].cat  = document.getElementById('fc').value;
-      annunci[idx].titolo = t;
-      annunci[idx].desc = document.getElementById('fde').value || 'Nessuna descrizione.';
-      annunci[idx].emoji = document.getElementById('fem').value || '📦';
-      annunci[idx].foto = [...fotoTemp];
-      annunci[idx].prezzo = document.getElementById('fpr').value || '';
-      annunci[idx].contatto = document.getElementById('fct').value || '';
-      annunci[idx].whatsapp = document.getElementById('fwa').value || '';
-    }
-    closeModal('mb');
-    resetFormA();
-    renderB(); renderHome();
+    await supa.from('annunci').update(payload).eq('id', editId);
     showToast('Annuncio aggiornato! ✅');
   } else {
-    // NUOVO
-    annunci.unshift({
-      id: Date.now(),
-      tipo: document.getElementById('ft').value,
-      cat:  document.getElementById('fc').value,
-      titolo: t,
-      desc: document.getElementById('fde').value || 'Nessuna descrizione.',
-      emoji: document.getElementById('fem').value || '📦',
-      foto: [...fotoTemp],
-      prezzo: document.getElementById('fpr').value || '',
-      contatto: document.getElementById('fct').value || '',
-      whatsapp: document.getElementById('fwa').value || '',
-      autore: currentUser ? currentUser.nome : 'Anonimo',
-      init:   currentUser ? currentUser.init : '??',
-      bg: BGS[Math.floor(Math.random() * BGS.length)]
-    });
-    closeModal('mb');
-    resetFormA();
-    renderB(); renderHome();
+    await supa.from('annunci').insert(payload);
     showToast('Annuncio pubblicato! 🎉');
   }
+  closeModal('mb');
+  resetFormA();
+  renderB();
 }
 
 function resetFormA() {
@@ -1439,8 +1446,8 @@ function resetFormA() {
   document.getElementById('btn-sub-ann').textContent = 'Pubblica ora →';
 }
 
-function editAnn(id) {
-  const a = annunci.find(x => x.id === id);
+async function editAnn(id) {
+  const { data: a } = await supa.from('annunci').select('*').eq('id', id).single();
   if (!a) return;
   closeModal('ann');
   fotoTemp = a.foto ? [...a.foto] : [];
@@ -1449,10 +1456,10 @@ function editAnn(id) {
   document.getElementById('ft').value = a.tipo;
   document.getElementById('fc').value = a.cat;
   document.getElementById('fti').value = a.titolo;
-  document.getElementById('fde').value = a.desc;
-  document.getElementById('fem').value = a.emoji;
-  document.getElementById('fpr').value = a.prezzo;
-  document.getElementById('fct').value = a.contatto;
+  document.getElementById('fde').value = a.descrizione || '';
+  document.getElementById('fem').value = a.emoji || '';
+  document.getElementById('fpr').value = a.prezzo || '';
+  document.getElementById('fct').value = a.contatto || '';
   document.getElementById('fwa').value = a.whatsapp || '';
   document.getElementById('modal-ann-title').textContent = 'Modifica annuncio';
   document.getElementById('btn-sub-ann').textContent = 'Salva modifiche →';
@@ -1508,12 +1515,26 @@ let currentUser = null;
 function switchLoginTab(tab) {
   document.getElementById('lpanel-in').style.display  = tab==='in'  ? '' : 'none';
   document.getElementById('lpanel-reg').style.display = tab==='reg' ? '' : 'none';
+  document.getElementById('lpanel-pw').style.display  = tab==='pw'  ? '' : 'none';
   document.getElementById('ltab-in').style.background  = tab==='in'  ? 'var(--acc)' : 'transparent';
   document.getElementById('ltab-in').style.color       = tab==='in'  ? '#000'       : 'var(--mut)';
   document.getElementById('ltab-reg').style.background = tab==='reg' ? 'var(--acc)' : 'transparent';
   document.getElementById('ltab-reg').style.color      = tab==='reg' ? '#000'       : 'var(--mut)';
   document.getElementById('reg-ok').style.display = 'none';
   document.getElementById('btn-reg').style.display = '';
+  document.getElementById('pw-ok').style.display = 'none';
+  document.getElementById('btn-pw').style.display = '';
+}
+
+async function doRecuperoPw() {
+  const email = document.getElementById('pw-email').value.trim().toLowerCase();
+  const err   = document.getElementById('pw-err');
+  if (!email) { showErr(err, 'Inserisci la tua email'); return; }
+  // Salva la richiesta nel db come nota speciale
+  await supa.from('richieste').upsert({ nome: '(Reset password)', email, pw: '', init: '??', nota: 'RESET PASSWORD' });
+  document.getElementById('pw-ok').style.display = '';
+  document.getElementById('btn-pw').style.display = 'none';
+  document.getElementById('pw-email').value = '';
 }
 
 async function doLogin() {
@@ -1556,6 +1577,7 @@ function loginSuccess(u) {
   document.getElementById('top-init').textContent = u.init;
   const parti = u.nome.split(' ');
   document.getElementById('top-name').textContent = parti[0]+' '+(parti[1]||'')[0]+'.';
+  document.getElementById('home-nome').textContent = parti[0] + '.';
   if (u.admin) {
     document.getElementById('top-admin').style.display = '';
     document.getElementById('tab-admin').style.display = '';
