@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>Bacheca-FOS</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -1493,17 +1494,15 @@ function showToast(msg) {
 // LOGIN
 // ═══════════════════════════════════
 // ═══════════════════════════════════
+// SUPABASE
+// ═══════════════════════════════════
+const SUPA_URL = 'https://etuxblcvkoksblqlavxi.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV0dXhibGN2a29rc2JscWxhdnhpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU4MTEwNzAsImV4cCI6MjA5MTM4NzA3MH0.TLDn1yNuQORHIWmV84wSd8BB7Pc9RlOJ5ilxIGOnOMo';
+const supa = supabase.createClient(SUPA_URL, SUPA_KEY);
+
+// ═══════════════════════════════════
 // SISTEMA UTENTI
 // ═══════════════════════════════════
-
-const ADMIN_EMAIL    = 'paolosnake@yahoo.it';
-const ADMIN_PASSWORD = 'Giorgione1_';
-
-let utentiRegistrati = [
-  { nome: 'Paolo Grazzini',  email: 'paolosnake@yahoo.it',   pw: 'Giorgione1_', init: 'PG', admin: true,  approvato: true  },
-];
-
-let richiesteAccesso = []; // richieste in attesa di approvazione
 let currentUser = null;
 
 function switchLoginTab(tab) {
@@ -1513,23 +1512,22 @@ function switchLoginTab(tab) {
   document.getElementById('ltab-in').style.color       = tab==='in'  ? '#000'       : 'var(--mut)';
   document.getElementById('ltab-reg').style.background = tab==='reg' ? 'var(--acc)' : 'transparent';
   document.getElementById('ltab-reg').style.color      = tab==='reg' ? '#000'       : 'var(--mut)';
-  // reset ok message
   document.getElementById('reg-ok').style.display = 'none';
   document.getElementById('btn-reg').style.display = '';
 }
 
-function doLogin() {
+async function doLogin() {
   const email = document.getElementById('lin-email').value.trim().toLowerCase();
   const pw    = document.getElementById('lin-pw').value;
   const err   = document.getElementById('lin-err');
   if (!email || !pw) { showErr(err, 'Compila tutti i campi'); return; }
-  const u = utentiRegistrati.find(u => u.email.toLowerCase()===email && u.pw===pw);
-  if (!u) { showErr(err, 'Email o password errati'); return; }
-  if (!u.approvato) { showErr(err, 'Il tuo account è in attesa di approvazione'); return; }
-  loginSuccess(u);
+  const { data, error } = await supa.from('utenti').select('*').eq('email', email).eq('pw', pw).single();
+  if (error || !data) { showErr(err, 'Email o password errati'); return; }
+  if (!data.approvato) { showErr(err, 'Account in attesa di approvazione'); return; }
+  loginSuccess(data);
 }
 
-function doRegister() {
+async function doRegister() {
   const nome  = document.getElementById('reg-nome').value.trim();
   const email = document.getElementById('reg-email').value.trim().toLowerCase();
   const pw    = document.getElementById('reg-pw').value;
@@ -1537,34 +1535,32 @@ function doRegister() {
   const err   = document.getElementById('reg-err');
   if (!nome || !email || !pw) { showErr(err, 'Compila almeno nome, email e password'); return; }
   if (pw.length < 6) { showErr(err, 'Password minimo 6 caratteri'); return; }
-  if (utentiRegistrati.find(u => u.email.toLowerCase()===email)) { showErr(err, 'Email già registrata'); return; }
-  if (richiesteAccesso.find(r => r.email.toLowerCase()===email)) { showErr(err, 'Richiesta già inviata, attendi l\'approvazione'); return; }
   const parts = nome.split(' ');
   const init  = (parts[0][0]+(parts[1]?parts[1][0]:parts[0][1]||'?')).toUpperCase();
-  richiesteAccesso.push({ nome, email, pw, init, nota, data: new Date().toLocaleDateString('it-IT') });
-  // mostra conferma
+  const { error } = await supa.from('richieste').insert({ nome, email, pw, init, nota });
+  if (error) {
+    if (error.code === '23505') { showErr(err, 'Email già registrata o richiesta già inviata'); return; }
+    showErr(err, 'Errore, riprova'); return;
+  }
   document.getElementById('reg-ok').style.display = '';
   document.getElementById('btn-reg').style.display = 'none';
   document.getElementById('reg-nome').value = '';
   document.getElementById('reg-email').value = '';
   document.getElementById('reg-pw').value = '';
   document.getElementById('reg-nota').value = '';
-  // aggiorna badge admin
-  aggiornaAdminBadge();
 }
 
 function loginSuccess(u) {
   currentUser = u;
   document.getElementById('login').classList.add('hidden');
   document.getElementById('top-init').textContent = u.init;
-  document.getElementById('top-name').textContent = u.nome.split(' ')[0]+' '+(u.nome.split(' ')[1]||'')[0]+'.';
+  const parti = u.nome.split(' ');
+  document.getElementById('top-name').textContent = parti[0]+' '+(parti[1]||'')[0]+'.';
   if (u.admin) {
     document.getElementById('top-admin').style.display = '';
     document.getElementById('tab-admin').style.display = '';
     aggiornaAdminBadge();
-    loadDemoOre(); // dati demo solo per l'admin
   }
-  // ricarica ore con dati dell'utente loggato
   oreRenderGrid();
   oreRenderStorico();
   oreLoadNote();
@@ -1577,8 +1573,9 @@ function showErr(el, msg) {
   setTimeout(() => el.style.display='none', 3500);
 }
 
-function aggiornaAdminBadge() {
-  const n = richiesteAccesso.length;
+async function aggiornaAdminBadge() {
+  const { data } = await supa.from('richieste').select('id');
+  const n = data ? data.length : 0;
   const badge = document.getElementById('nb-admin');
   badge.textContent = n;
   badge.style.display = n > 0 ? '' : 'none';
@@ -1587,32 +1584,32 @@ function aggiornaAdminBadge() {
 // ═══════════════════════════════════
 // PANNELLO ADMIN
 // ═══════════════════════════════════
-function renderAdmin() {
-  // Richieste in attesa
+async function renderAdmin() {
   const rEl = document.getElementById('admin-richieste');
-  if (richiesteAccesso.length === 0) {
+  rEl.innerHTML = '<div style="color:var(--mut);font-size:.82rem;padding:.4rem 0">Caricamento...</div>';
+  const { data: richieste } = await supa.from('richieste').select('*').order('created_at');
+  if (!richieste || richieste.length === 0) {
     rEl.innerHTML = '<div class="empty"><div class="emico">✅</div><h3>Nessuna richiesta pendente</h3></div>';
   } else {
-    rEl.innerHTML = richiesteAccesso.map((r, i) => `
+    rEl.innerHTML = richieste.map(r => `
       <div style="background:var(--s1);border:1px solid var(--b);border-radius:12px;padding:1rem 1.2rem;margin-bottom:.7rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.8rem">
         <div style="display:flex;align-items:center;gap:.8rem">
           <div class="adot" style="width:36px;height:36px;font-size:.85rem">${r.init}</div>
           <div>
             <div style="font-weight:600;font-size:.95rem">${r.nome}</div>
-            <div style="font-size:.75rem;color:var(--mut)">${r.email} · ${r.data}</div>
+            <div style="font-size:.75rem;color:var(--mut)">${r.email} · ${new Date(r.created_at).toLocaleDateString('it-IT')}</div>
             ${r.nota ? `<div style="font-size:.75rem;color:var(--pur);margin-top:.2rem">💬 "${r.nota}"</div>` : ''}
           </div>
         </div>
         <div style="display:flex;gap:.5rem">
-          <button class="btn-new" style="font-size:.82rem;padding:.45rem .9rem;background:#47e8a0;color:#000" onclick="approvaUtente(${i})">✅ Approva</button>
-          <button class="btn-new" style="font-size:.82rem;padding:.45rem .9rem;background:rgba(212,43,43,.15);color:var(--acc);border:1px solid rgba(212,43,43,.3)" onclick="rifiutaUtente(${i})">❌ Rifiuta</button>
+          <button class="btn-new" style="font-size:.82rem;padding:.45rem .9rem;background:#47e8a0;color:#000" onclick="approvaUtente('${r.id}','${r.nome}','${r.email}','${r.pw}','${r.init}')">✅ Approva</button>
+          <button class="btn-new" style="font-size:.82rem;padding:.45rem .9rem;background:rgba(212,43,43,.15);color:var(--acc);border:1px solid rgba(212,43,43,.3)" onclick="rifiutaUtente('${r.id}','${r.nome}')">❌ Rifiuta</button>
         </div>
       </div>`).join('');
   }
-
-  // Utenti approvati
   const uEl = document.getElementById('admin-utenti');
-  uEl.innerHTML = utentiRegistrati.map(u => `
+  const { data: utenti } = await supa.from('utenti').select('*').order('created_at');
+  uEl.innerHTML = (utenti||[]).map(u => `
     <div style="background:var(--s1);border:1px solid var(--b);border-radius:12px;padding:.85rem 1.2rem;margin-bottom:.5rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.6rem">
       <div style="display:flex;align-items:center;gap:.8rem">
         <div class="adot" style="width:32px;height:32px;font-size:.78rem">${u.init}</div>
@@ -1625,38 +1622,25 @@ function renderAdmin() {
     </div>`).join('');
 }
 
-function approvaUtente(i) {
-  const r = richiesteAccesso[i];
-  utentiRegistrati.push({ nome: r.nome, email: r.email, pw: r.pw, init: r.init, admin: false, approvato: true });
-  richiesteAccesso.splice(i, 1);
+async function approvaUtente(id, nome, email, pw, init) {
+  await supa.from('utenti').insert({ nome, email, pw, init, admin: false, approvato: true });
+  await supa.from('richieste').delete().eq('id', id);
   aggiornaAdminBadge();
   renderAdmin();
-  showToast(`${r.nome} approvato! ✅`);
+  showToast(`${nome} approvato! ✅`);
 }
 
-function rifiutaUtente(i) {
-  const r = richiesteAccesso[i];
-  if (!confirm(`Rifiutare la richiesta di ${r.nome}?`)) return;
-  richiesteAccesso.splice(i, 1);
+async function rifiutaUtente(id, nome) {
+  if (!confirm(`Rifiutare la richiesta di ${nome}?`)) return;
+  await supa.from('richieste').delete().eq('id', id);
   aggiornaAdminBadge();
   renderAdmin();
-  showToast(`Richiesta di ${r.nome} rifiutata`);
+  showToast(`Richiesta di ${nome} rifiutata`);
 }
 
 // ═══════════════════════════════════
 // DEMO DATA + INIT
 // ═══════════════════════════════════
-function loadDemoOre() {
-  // dati demo per l'admin: oggi 08:00-12:00 e 13:00-17:00
-  const k = oreKey(0);
-  if (!oreData[k] || oreData[k].length === 0) {
-    oreData[k] = [
-      { start: 16, end: 24, cat: 'work' },
-      { start: 26, end: 34, cat: 'work' },
-    ];
-  }
-}
-
 (function init() {
   renderHome();
   renderB();
