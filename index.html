@@ -409,7 +409,6 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);min-
       <div class="lf"><label>Nome e Cognome</label><input id="reg-nome" placeholder="Es. Mario Rossi"></div>
       <div class="lf"><label>Email</label><input id="reg-email" type="email" placeholder="es. mario@email.com"></div>
       <div class="lf"><label>Password</label><input id="reg-pw" type="password" placeholder="Min. 6 caratteri"></div>
-      <div class="lf"><label>Chi sei? (facoltativo)</label><input id="reg-nota" placeholder="Es. Ufficio tecnico Lucca, da 3 anni..."></div>
       <div id="reg-err" style="font-size:.76rem;color:var(--acc);margin-bottom:.7rem;display:none"></div>
       <div id="reg-ok" style="font-size:.82rem;background:rgba(71,232,160,.1);color:var(--grn);border:1px solid rgba(71,232,160,.25);border-radius:8px;padding:.7rem;margin-bottom:.8rem;display:none">
         ✅ Richiesta inviata! L'amministratore la valuterà a breve. Ricontrolla tra poco.
@@ -464,17 +463,13 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);min-
     <div class="hsub">La tua piattaforma interna · Tutto in un posto</div>
   </div>
   <div class="qs">
-    <div class="qsc" onclick="goPage('bacheca',document.querySelectorAll('.ntab')[1])"><div class="qico">🏷️</div><div class="qnum" id="qs-b">7</div><div class="qlbl">Annunci</div></div>
-    <div class="qsc" onclick="goPage('ristoranti',document.querySelectorAll('.ntab')[2])"><div class="qico">🍽️</div><div class="qnum" id="qs-r">6</div><div class="qlbl">Ristoranti</div></div>
+    <div class="qsc" onclick="goPage('bacheca',document.querySelectorAll('.ntab')[1])"><div class="qico">🏷️</div><div class="qnum" id="qs-b">0</div><div class="qlbl">Annunci</div></div>
+    <div class="qsc" onclick="goPage('ristoranti',document.querySelectorAll('.ntab')[2])"><div class="qico">🍽️</div><div class="qnum" id="qs-r">0</div><div class="qlbl">Ristoranti</div></div>
     <div class="qsc" onclick="goPage('ore',document.querySelectorAll('.ntab')[3])"><div class="qico">⏱️</div><div class="qnum" id="qs-ore">0h</div><div class="qlbl">Ore oggi</div></div>
-    <div class="qsc"><div class="qico">✅</div><div class="qnum">41</div><div class="qlbl">Scambi</div></div>
   </div>
   <div class="sechdr"><div class="sectitle">📢 Avvisi</div></div>
   <div class="avvisi">
-    <div class="avv"><div class="avvico">📅</div><div><div class="abdg ab-ev">Evento</div><div class="avvtitle">Team building – Venerdì 11 Aprile</div><div class="avvdesc">Ore 14:30 sala riunioni grande. Conferma entro giovedì.</div><div class="avvdate">Admin · 3 giorni fa</div></div></div>
-    <div class="avv"><div class="avvico">⚠️</div><div><div class="abdg ab-wa">Attenzione</div><div class="avvtitle">Parcheggio chiuso 9-10 Aprile</div><div class="avvdesc">Usare parcheggio pubblico via Roma.</div><div class="avvdate">Admin · 1 giorno fa</div></div></div>
-    <div class="avv"><div class="avvico">🎉</div><div><div class="abdg ab-ne">Novità</div><div class="avvtitle">Bacheca-FOS ora su mobile!</div><div class="avvdesc">Aggiungi alla schermata home per accesso rapido.</div><div class="avvdate">Admin · 5 giorni fa</div></div></div>
-    <div class="avv"><div class="avvico">ℹ️</div><div><div class="abdg ab-in">Info</div><div class="avvtitle">Refettorio aperto da lunedì</div><div class="avvdesc">Menù fisso €8. Prenotazione entro le 10:30.</div><div class="avvdate">Admin · 1 settimana fa</div></div></div>
+    <div id="avvisi-list"></div>
   </div>
   <div class="sechdr"><div class="sectitle">🏷️ Ultimi annunci</div><div class="seclink" onclick="goPage('bacheca',document.querySelectorAll('.ntab')[1])">Vedi tutti →</div></div>
   <div class="hgrid" id="home-ann"></div>
@@ -495,21 +490,16 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);min-
     <div><div class="ptitle">Mercatino</div><div class="psub">Vendite · Affitti · Servizi · Solo tra colleghi</div></div>
     <button class="btn-new" onclick="openModal('mb')">+ Pubblica</button>
   </div>
-  <div class="mstats">
-    <div class="ms"><span class="msn" id="ms-b">7</span><span class="msl">annunci</span></div>
-    <div class="ms"><span class="msn">24</span><span class="msl">colleghi</span></div>
-    <div class="ms"><span class="msn">3</span><span class="msl">sedi</span></div>
-    <div class="ms"><span class="msn">41</span><span class="msl">scambi</span></div>
-  </div>
+  <div style="margin-bottom:.8rem;font-size:.82rem;color:var(--mut)">Totale: <span id="ms-b" style="color:var(--acc);font-weight:700">0</span> annunci</div>
   <div class="sbar"><span style="color:var(--mut)">🔍</span><input id="sb" placeholder="Cerca auto, casa al mare, ripetizioni..." oninput="renderB()"></div>
   <div class="chips" id="chips-b">
-    <button class="chip on" onclick="setFB('Tutti',this)">Tutti</button>
-    <button class="chip" onclick="setFB('Veicoli',this)">🚗 Veicoli</button>
-    <button class="chip" onclick="setFB('Oggettistica',this)">📦 Oggettistica</button>
-    <button class="chip" onclick="setFB('Affitto',this)">🏖️ Affitti</button>
-    <button class="chip" onclick="setFB('Servizio',this)">💼 Servizi</button>
-    <button class="chip" onclick="setFB('Regalo',this)">🎁 Regalo</button>
-    <button class="chip" onclick="setFB('Cercasi',this)">🔎 Cercasi</button>
+    <button class="chip on" onclick="setFB('Tutti',this)">Tutti <span id="cnt-tutti" class="nbadge" style="background:var(--b);color:var(--mut)">0</span></button>
+    <button class="chip" onclick="setFB('Veicoli',this)">🚗 Veicoli <span id="cnt-veicoli" class="nbadge" style="background:var(--b);color:var(--mut)">0</span></button>
+    <button class="chip" onclick="setFB('Oggettistica',this)">📦 Oggettistica <span id="cnt-oggettistica" class="nbadge" style="background:var(--b);color:var(--mut)">0</span></button>
+    <button class="chip" onclick="setFB('Affitto',this)">🏖️ Affitti <span id="cnt-affitto" class="nbadge" style="background:var(--b);color:var(--mut)">0</span></button>
+    <button class="chip" onclick="setFB('Servizio',this)">💼 Servizi <span id="cnt-servizio" class="nbadge" style="background:var(--b);color:var(--mut)">0</span></button>
+    <button class="chip" onclick="setFB('Regalo',this)">🎁 Regalo <span id="cnt-regalo" class="nbadge" style="background:var(--b);color:var(--mut)">0</span></button>
+    <button class="chip" onclick="setFB('Cercasi',this)">🔎 Cercasi <span id="cnt-cercasi" class="nbadge" style="background:var(--b);color:var(--mut)">0</span></button>
   </div>
   <div class="slbl" id="sl-b">Tutti gli annunci</div>
   <div class="bgrid" id="grid-b"></div>
@@ -612,6 +602,29 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);min-
   <div class="phdr">
     <div><div class="ptitle">⚙️ Pannello Admin</div><div class="psub">Gestisci utenti e richieste di accesso</div></div>
   </div>
+
+  <!-- AVVISI -->
+  <div class="sechdr"><div class="sectitle">📢 Avvisi in bacheca</div></div>
+  <div style="background:var(--s1);border:1px solid var(--b);border-radius:12px;padding:1.2rem;margin-bottom:1.5rem">
+    <div class="fgr">
+      <div class="fg"><label style="font-size:.72rem;font-weight:600;color:var(--mut);text-transform:uppercase;letter-spacing:.08em;display:block;margin-bottom:.4rem">Tipo</label>
+        <select id="av-tipo" style="width:100%;padding:.7rem;background:var(--s2);border:1px solid var(--b);border-radius:10px;color:var(--text);font-family:'Outfit',sans-serif">
+          <option value="ev">📅 Evento</option>
+          <option value="wa">⚠️ Attenzione</option>
+          <option value="ne">🎉 Novità</option>
+          <option value="in">ℹ️ Info</option>
+        </select>
+      </div>
+      <div class="fg"><label style="font-size:.72rem;font-weight:600;color:var(--mut);text-transform:uppercase;letter-spacing:.08em;display:block;margin-bottom:.4rem">Titolo</label>
+        <input id="av-titolo" placeholder="Es. Riunione venerdì ore 14" style="width:100%;padding:.7rem;background:var(--s2);border:1px solid var(--b);border-radius:10px;color:var(--text);font-family:'Outfit',sans-serif">
+      </div>
+    </div>
+    <div class="fg" style="margin-top:.7rem"><label style="font-size:.72rem;font-weight:600;color:var(--mut);text-transform:uppercase;letter-spacing:.08em;display:block;margin-bottom:.4rem">Descrizione</label>
+      <input id="av-desc" placeholder="Dettagli avviso..." style="width:100%;padding:.7rem;background:var(--s2);border:1px solid var(--b);border-radius:10px;color:var(--text);font-family:'Outfit',sans-serif">
+    </div>
+    <button class="btn-new" style="margin-top:.9rem" onclick="addAvviso()">+ Pubblica avviso</button>
+  </div>
+  <div id="admin-avvisi" style="margin-bottom:2rem"></div>
 
   <!-- RICHIESTE IN ATTESA -->
   <div class="sechdr"><div class="sectitle">🕐 Richieste in attesa</div></div>
@@ -1284,7 +1297,7 @@ function cardHtml(a) {
   const thumb = a.foto && a.foto.length
     ? `<img src="${a.foto[0]}" style="width:100%;height:100%;object-fit:cover">`
     : a.emoji;
-  return `<div class="card" onclick="openAnn(${a.id})">
+  return `<div class="card" onclick="openAnn('${a.id}')">
     <div class="cthumb ${a.foto && a.foto.length ? '' : a.bg}" style="${a.foto && a.foto.length ? 'padding:0;overflow:hidden' : ''}">${thumb}</div>
     <div class="cbody">
       <div class="ctop"><span class="bdg ${bdgCls(a.tipo)}">${a.tipo}</span><span class="ccat">${a.cat}</span></div>
@@ -1294,7 +1307,7 @@ function cardHtml(a) {
       ${a.contatto ? `<div style="font-size:.75rem;color:var(--mut);margin-bottom:.5rem">📞 ${a.contatto}</div>` : ''}
       <div class="cfoot">
         <div class="cauth"><div class="adot">${a.init}</div><span class="aname">${a.autore}</span></div>
-        <button class="bctn" onclick="event.stopPropagation();openAnn(${a.id})">Vedi →</button>
+        <button class="bctn" onclick="event.stopPropagation();openAnn('${a.id}')">Vedi →</button>
       </div>
     </div>
   </div>`;
@@ -1313,11 +1326,25 @@ async function renderB() {
   document.getElementById('ms-b').textContent = annunci.length;
   document.getElementById('nb-b').textContent = annunci.length;
   document.getElementById('qs-b').textContent = annunci.length;
+  // contatori per categoria
+  const cats = { tutti: annunci.length, veicoli: 0, oggettistica: 0, affitto: 0, servizio: 0, regalo: 0, cercasi: 0 };
+  annunci.forEach(a => {
+    if (a.cat==='Veicoli') cats.veicoli++;
+    else if (a.cat==='Oggettistica') cats.oggettistica++;
+    else if (a.tipo==='Affitto'||a.cat==='Affitto') cats.affitto++;
+    else if (a.tipo==='Servizio'||a.cat==='Servizio') cats.servizio++;
+    else if (a.tipo==='Regalo') cats.regalo++;
+    else if (a.tipo==='Cercasi') cats.cercasi++;
+  });
+  ['tutti','veicoli','oggettistica','affitto','servizio','regalo','cercasi'].forEach(k => {
+    const el = document.getElementById('cnt-'+k);
+    if (el) el.textContent = cats[k];
+  });
   document.getElementById('sl-b').textContent = fB==='Tutti' ? `Tutti (${d.length})` : `${fB} (${d.length})`;
   const g = document.getElementById('grid-b');
   g.innerHTML = d.length ? d.map(cardHtml).join('') : '<div class="empty"><div class="emico">🔍</div><h3>Nessun risultato</h3></div>';
   // aggiorna home
-  document.getElementById('home-ann').innerHTML = annunci.slice(0,3).map(cardHtml).join('');
+  document.getElementById('home-ann').innerHTML = d.slice(0,3).map(cardHtml).join('');
 }
 function setFB(v, btn) {
   fB = v;
@@ -1501,6 +1528,79 @@ function showToast(msg) {
 // LOGIN
 // ═══════════════════════════════════
 // ═══════════════════════════════════
+// AVVISI
+// ═══════════════════════════════════
+const AVVISO_CFG = {
+  ev: { label:'Evento',    cls:'ab-ev', ico:'📅' },
+  wa: { label:'Attenzione',cls:'ab-wa', ico:'⚠️' },
+  ne: { label:'Novità',    cls:'ab-ne', ico:'🎉' },
+  in: { label:'Info',      cls:'ab-in', ico:'ℹ️' },
+};
+
+async function loadAvvisi() {
+  const { data } = await supa.from('avvisi').select('*').order('created_at', { ascending: false });
+  const el = document.getElementById('avvisi-list');
+  if (!data || !data.length) {
+    el.innerHTML = '<div style="color:var(--mut);font-size:.82rem;padding:.4rem 0">Nessun avviso attivo</div>';
+    return;
+  }
+  el.innerHTML = data.map(a => {
+    const cfg = AVVISO_CFG[a.tipo] || AVVISO_CFG.in;
+    const giorni = Math.floor((Date.now() - new Date(a.created_at)) / 86400000);
+    const quando = giorni === 0 ? 'oggi' : giorni === 1 ? 'ieri' : `${giorni} giorni fa`;
+    return `<div class="avv">
+      <div class="avvico">${cfg.ico}</div>
+      <div>
+        <div class="abdg ${cfg.cls}">${cfg.label}</div>
+        <div class="avvtitle">${a.titolo}</div>
+        <div class="avvdesc">${a.descrizione}</div>
+        <div class="avvdate">Admin · ${quando}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function addAvviso() {
+  const titolo = document.getElementById('av-titolo').value.trim();
+  const desc   = document.getElementById('av-desc').value.trim();
+  const tipo   = document.getElementById('av-tipo').value;
+  if (!titolo) { showToast('Inserisci un titolo'); return; }
+  await supa.from('avvisi').insert({ titolo, descrizione: desc, tipo });
+  document.getElementById('av-titolo').value = '';
+  document.getElementById('av-desc').value = '';
+  loadAvvisi();
+  renderAdminAvvisi();
+  showToast('Avviso pubblicato! 📢');
+}
+
+async function renderAdminAvvisi() {
+  const { data } = await supa.from('avvisi').select('*').order('created_at', { ascending: false });
+  const el = document.getElementById('admin-avvisi');
+  if (!data || !data.length) { el.innerHTML = ''; return; }
+  el.innerHTML = data.map(a => {
+    const cfg = AVVISO_CFG[a.tipo] || AVVISO_CFG.in;
+    return `<div style="background:var(--s1);border:1px solid var(--b);border-radius:10px;padding:.75rem 1rem;margin-bottom:.5rem;display:flex;align-items:center;justify-content:space-between;gap:.8rem;flex-wrap:wrap">
+      <div style="display:flex;align-items:center;gap:.6rem">
+        <span>${cfg.ico}</span>
+        <div>
+          <div style="font-size:.88rem;font-weight:600">${a.titolo}</div>
+          <div style="font-size:.74rem;color:var(--mut)">${a.descrizione}</div>
+        </div>
+      </div>
+      <button class="btn-new" style="font-size:.78rem;padding:.35rem .75rem;background:rgba(212,43,43,.15);color:var(--acc);border:1px solid rgba(212,43,43,.3)" onclick="deleteAvviso('${a.id}')">🗑️ Elimina</button>
+    </div>`;
+  }).join('');
+}
+
+async function deleteAvviso(id) {
+  if (!confirm('Eliminare questo avviso?')) return;
+  await supa.from('avvisi').delete().eq('id', id);
+  loadAvvisi();
+  renderAdminAvvisi();
+  showToast('Avviso eliminato');
+}
+
+// ═══════════════════════════════════
 // SUPABASE
 // ═══════════════════════════════════
 const SUPA_URL = 'https://etuxblcvkoksblqlavxi.supabase.co';
@@ -1552,7 +1652,7 @@ async function doRegister() {
   const nome  = document.getElementById('reg-nome').value.trim();
   const email = document.getElementById('reg-email').value.trim().toLowerCase();
   const pw    = document.getElementById('reg-pw').value;
-  const nota  = document.getElementById('reg-nota').value.trim();
+  const nota  = '';
   const err   = document.getElementById('reg-err');
   if (!nome || !email || !pw) { showErr(err, 'Compila almeno nome, email e password'); return; }
   if (pw.length < 6) { showErr(err, 'Password minimo 6 caratteri'); return; }
@@ -1568,7 +1668,6 @@ async function doRegister() {
   document.getElementById('reg-nome').value = '';
   document.getElementById('reg-email').value = '';
   document.getElementById('reg-pw').value = '';
-  document.getElementById('reg-nota').value = '';
 }
 
 function loginSuccess(u) {
@@ -1586,6 +1685,7 @@ function loginSuccess(u) {
   oreRenderGrid();
   oreRenderStorico();
   oreLoadNote();
+  loadAvvisi();
   renderB(); renderHome();
 }
 
@@ -1607,6 +1707,7 @@ async function aggiornaAdminBadge() {
 // PANNELLO ADMIN
 // ═══════════════════════════════════
 async function renderAdmin() {
+  renderAdminAvvisi();
   const rEl = document.getElementById('admin-richieste');
   rEl.innerHTML = '<div style="color:var(--mut);font-size:.82rem;padding:.4rem 0">Caricamento...</div>';
   const { data: richieste } = await supa.from('richieste').select('*').order('created_at');
