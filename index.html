@@ -378,6 +378,17 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);min-
   .qs{grid-template-columns:1fr 1fr}
   .rcard{flex-direction:column;gap:.6rem}
 }
+
+.sp-box{background:var(--s1);border:1px solid var(--b);border-radius:14px;padding:1rem;margin-bottom:1rem}
+.sp-bal{font-size:2.2rem;font-weight:700;color:var(--grn)}.sp-bal.neg{color:var(--acc)}
+.sp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:.7rem;margin-bottom:1rem}
+.sp-it{background:var(--s1);border:1px solid var(--b);border-radius:14px;padding:1rem;text-align:left;color:var(--text);font-family:inherit;font-size:.95rem;cursor:pointer}
+.sp-it b{display:block}.sp-it span{color:var(--acc);font-weight:700}.sp-it:active{transform:scale(.97)}
+.sp-row{display:flex;justify-content:space-between;align-items:center;gap:.5rem;padding:.55rem 0;border-bottom:1px solid var(--b)}
+.sp-row:last-child{border:0}
+.sp-b{background:var(--acc);color:#000;border:none;border-radius:8px;padding:.4rem .7rem;font-family:inherit;font-weight:700;cursor:pointer}
+.sp-g{background:none;color:var(--mut);border:1px solid var(--b);border-radius:8px;padding:.35rem .6rem;font-family:inherit;cursor:pointer}
+.sp-f{display:flex;gap:.5rem;margin-top:.6rem}.sp-f input{flex:1;padding:.55rem;background:var(--bg);border:1px solid var(--b);border-radius:8px;color:var(--text);font-family:inherit}
 </style>
 </head>
 <body>
@@ -451,6 +462,7 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);min-
   <button class="ntab" onclick="goPage('bacheca',this)">🛍️ Mercatino <span class="nbadge" id="nb-b">7</span></button>
   <button class="ntab" onclick="goPage('ristoranti',this)">🍽️ Ristoranti <span class="nbadge" id="nb-r">6</span></button>
   <button class="ntab" onclick="goPage('ore',this)">⏱️ Ore lavoro</button>
+  <button class="ntab" onclick="goPage('spaccio',this)">🥨 Spaccio</button>
   <button class="ntab" id="tab-admin" style="display:none" onclick="goPage('admin',this)">⚙️ Admin <span class="nbadge" id="nb-admin" style="display:none">0</span></button>
   <button class="ntab" style="opacity:.38;cursor:not-allowed">📅 Prenotazioni <small style="font-size:.64rem;color:var(--mut)">presto</small></button>
 </div>
@@ -503,6 +515,12 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);min-
   </div>
   <div class="slbl" id="sl-b">Tutti gli annunci</div>
   <div class="bgrid" id="grid-b"></div>
+</div></div>
+
+<!-- ═══════ SPACCIO ═══════ -->
+<div class="page" id="page-spaccio"><div class="wrap">
+  <div class="phdr"><div><div class="ptitle">Spaccio</div><div class="psub">Taralli, barrette &amp; co. · Prendi e ti scali da solo</div></div></div>
+  <div id="sp-root" style="color:var(--mut)">Caricamento…</div>
 </div></div>
 
 <!-- ═══════ RISTORANTI ═══════ -->
@@ -1288,6 +1306,7 @@ function goPage(id, btn) {
   btn.classList.add('on');
   if (id === 'ore') oreRenderGrid();
   if (id === 'admin') renderAdmin();
+  if (id === 'spaccio') spRender();
   if (id === 'ristoranti') { rShowStep('continenti'); renderRContinenti(); }
 }
 
@@ -1957,6 +1976,69 @@ async function rifiutaUtente(id, nome) {
   oreRenderStorico();
   oreLoadNote();
 })();
+
+// ═══════════════════════════════════
+// SPACCIO
+// ═══════════════════════════════════
+const spEur = c => (c/100).toFixed(2).replace('.', ',') + ' €';
+const spCents = v => Math.round(parseFloat(String(v).replace(',', '.')) * 100);
+const spEsc = t => String(t).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+async function spGet(email) {
+  const { data } = await supa.from('spaccio_saldi').select('*').eq('email', email).maybeSingle();
+  return data || { email, saldo: 0, log: [] };
+}
+async function spSave(old, saldo, log) {
+  // scrittura "compare-and-set": fallisce se nel frattempo il saldo è cambiato
+  if (old._new) { const r = await supa.from('spaccio_saldi').insert({ email: old.email, saldo, log }); return !r.error; }
+  const { data } = await supa.from('spaccio_saldi').update({ saldo, log }).eq('email', old.email).eq('saldo', old.saldo).select();
+  return !!(data && data.length);
+}
+async function spRender() {
+  if (!currentUser) return;
+  const root = document.getElementById('sp-root');
+  const [{ data: prod }, mine] = await Promise.all([supa.from('spaccio_prodotti').select('*').order('nome'), spGet(currentUser.email)]);
+  const items = prod || [], last = (mine.log || [])[0];
+  let h = `<div class="sp-box"><div style="color:var(--mut)">Il tuo saldo</div><div class="sp-bal ${mine.saldo<0?'neg':''}">${spEur(mine.saldo)}</div>` +
+    (last ? `<div style="color:var(--mut);font-size:.85rem">Ultimo: ${spEsc(last.n)} · <a href="#" onclick="spUndo();return false" style="color:var(--acc)">annulla</a></div>` : '') + `</div>`;
+  h += items.length ? `<div class="sp-grid">` + items.map(i => `<button class="sp-it" onclick="spBuy(${i.id})"><b>${spEsc(i.nome)}</b><span>${spEur(i.prezzo)}</span></button>`).join('') + `</div>` : `<div style="margin-bottom:1rem">Nessun prodotto ancora.</div>`;
+  if (currentUser.admin) {
+    const [{ data: ut }, { data: sal }] = await Promise.all([supa.from('utenti').select('nome,email').order('nome'), supa.from('spaccio_saldi').select('email,saldo')]);
+    const sm = {}; (sal || []).forEach(x => sm[x.email] = x.saldo);
+    h += `<div class="sp-box"><b>Saldi colleghi</b>` + (ut || []).map(u => `<div class="sp-row"><span>${spEsc(u.nome)}<br><span style="color:var(--mut);font-size:.85rem">${spEur(sm[u.email]||0)}</span></span><span><button class="sp-b" onclick="spTopup('${spEsc(u.email)}',500)">+5 €</button> <button class="sp-g" onclick="spTopupAsk('${spEsc(u.email)}')">altro</button></span></div>`).join('') + `</div>`;
+    h += `<div class="sp-box"><b>Prodotti</b>` + items.map(i => `<div class="sp-row"><span>${spEsc(i.nome)} · ${spEur(i.prezzo)}</span><button class="sp-g" onclick="spDel(${i.id})">elimina</button></div>`).join('') +
+      `<div class="sp-f"><input id="sp-n" placeholder="Nome (es. Taralli)"><input id="sp-p" placeholder="€" inputmode="decimal" style="max-width:90px"></div><div class="sp-f"><button class="sp-b" style="width:100%" onclick="spAdd()">Aggiungi prodotto</button></div></div>`;
+  }
+  root.innerHTML = h;
+}
+async function spBuy(id) {
+  const { data: it } = await supa.from('spaccio_prodotti').select('*').eq('id', id).single();
+  if (!it) return;
+  const w = await spGet(currentUser.email), isNew = !(await supa.from('spaccio_saldi').select('email').eq('email', currentUser.email).maybeSingle()).data;
+  if (w.saldo < it.prezzo) return showToast('Saldo insufficiente: chiedi una ricarica');
+  w._new = isNew;
+  const ok = await spSave(w, w.saldo - it.prezzo, [{ n: it.nome, p: it.prezzo, t: Date.now() }, ...(w.log || [])].slice(0, 8));
+  showToast(ok ? 'Preso: ' + it.nome + ' (−' + spEur(it.prezzo) + ')' : 'Riprova, saldo appena cambiato'); spRender();
+}
+async function spUndo() {
+  const w = await spGet(currentUser.email), [l, ...rest] = w.log || [];
+  if (!l) return;
+  const ok = await spSave(w, w.saldo + l.p, rest);
+  showToast(ok ? 'Annullato: ' + l.n : 'Riprova'); spRender();
+}
+async function spTopup(email, c) {
+  if (!currentUser.admin || !c || isNaN(c)) return;
+  const exists = (await supa.from('spaccio_saldi').select('email').eq('email', email).maybeSingle()).data;
+  const w = await spGet(email); w._new = !exists;
+  const ok = await spSave(w, w.saldo + c, w.log || []);
+  showToast(ok ? 'Ricarica: ' + spEur(c) : 'Riprova'); spRender();
+}
+function spTopupAsk(email) { const v = prompt('Importo da caricare (€):'); if (v) spTopup(email, spCents(v)); }
+async function spAdd() {
+  const n = document.getElementById('sp-n').value.trim(), p = spCents(document.getElementById('sp-p').value);
+  if (!n || isNaN(p) || p <= 0) return showToast('Inserisci nome e prezzo');
+  await supa.from('spaccio_prodotti').insert({ nome: n, prezzo: p }); spRender();
+}
+async function spDel(id) { await supa.from('spaccio_prodotti').delete().eq('id', id); spRender(); }
 </script>
 </body>
 </html>
