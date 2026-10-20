@@ -520,7 +520,7 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);min-
 
 <!-- ═══════ SPACCIO ═══════ -->
 <div class="page" id="page-spaccio"><div class="wrap">
-  <div class="phdr"><div><div class="ptitle">Spaccio</div><div class="psub">Taralli, barrette &amp; co. · Prendi e ti scali da solo</div></div></div>
+  <div class="phdr"><div><div class="ptitle">Spaccio</div><div class="psub">Taralli, barrette &amp; co. · Prendi e ti scali da solo · v3</div></div></div>
   <div id="sp-root" style="color:var(--mut)">Caricamento…</div>
 </div></div>
 
@@ -2004,7 +2004,7 @@ function spMovHtml(mov, nameOf) {
 async function spRender() {
   const r = document.getElementById('sp-root');
   if (!currentUser) { r.innerHTML = 'Accedi per usare lo Spaccio.'; return; }
-  try { await spRender2(); }
+  try { await Promise.race([spRender2(), new Promise((_, no) => setTimeout(() => no(new Error('il database non risponde')), 12000))]); }
   catch (e) { r.innerHTML = '<div class="sp-box"><b>Errore:</b> ' + spEsc(e.message || e) + '<br><span style="color:var(--mut)">Controlla che il progetto Supabase sia attivo e che le tabelle spaccio_* esistano.</span></div>'; }
 }
 async function spRender2() {
