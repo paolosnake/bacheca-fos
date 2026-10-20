@@ -520,7 +520,7 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);min-
 
 <!-- ═══════ SPACCIO ═══════ -->
 <div class="page" id="page-spaccio"><div class="wrap">
-  <div class="phdr"><div><div class="ptitle">Spaccio</div><div class="psub">Taralli, barrette &amp; co. · Prendi e ti scali da solo · v3</div></div></div>
+  <div class="phdr"><div><div class="ptitle">Spaccio</div><div class="psub">Taralli, barrette &amp; co. · Prendi e ti scali da solo · v4</div></div></div>
   <div id="sp-root" style="color:var(--mut)">Caricamento…</div>
 </div></div>
 
@@ -1966,19 +1966,6 @@ async function rifiutaUtente(id, nome) {
 }
 
 // ═══════════════════════════════════
-// DEMO DATA + INIT
-// ═══════════════════════════════════
-(function init() {
-  renderHome();
-  renderB();
-  renderR();
-  document.getElementById('ore-dlbl').textContent = oreDateLabel(0);
-  oreRenderGrid();
-  oreRenderStorico();
-  oreLoadNote();
-})();
-
-// ═══════════════════════════════════
 // SPACCIO
 // ═══════════════════════════════════
 let spView = null, spFT = '', spPer = 'tutto';
@@ -2104,6 +2091,20 @@ async function spRendiconto(adm, me) {
     `<div style="color:var(--mut);margin:.4rem 0">Incassato (ricariche): ${spEur(tot.r)} · Consumato: ${spEur(tot.s)}</div>` +
     (Object.entries(ag).sort((x, y) => y[1].spesa - x[1].spesa).map(([e, a]) => `<div class="sp-row" style="display:block"><b>${spEsc(nm(e))}</b> · speso ${spEur(a.spesa)} · ricaricato ${spEur(a.rich)}<br><span style="color:var(--mut);font-size:.85rem">${prodTxt(a)}</span></div>`).join('') || '<div style="color:var(--mut)">Nessun movimento nel periodo.</div>') + `</div>`;
 }
+
+// ═══════════════════════════════════
+// DEMO DATA + INIT
+// ═══════════════════════════════════
+(function init() {
+  renderHome();
+  renderB();
+  renderR();
+  document.getElementById('ore-dlbl').textContent = oreDateLabel(0);
+  oreRenderGrid();
+  oreRenderStorico();
+  oreLoadNote();
+})();
+
 </script>
 </body>
 </html>
